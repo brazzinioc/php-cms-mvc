@@ -1,0 +1,50 @@
+version: "3"
+services:
+  #PHP Service
+  app:
+    build: .
+    container_name: my-php-app
+    restart: unless-stopped
+    working_dir: /var/www/
+    volumes:
+      - ./src/:/var/www
+      - ./php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - app-network
+
+  #NGINX Service
+  webserver:
+    image: nginx
+    container_name: my-php-webserver
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./src/:/var/www
+      - ./nginx/conf.d/:/etc/nginx/conf.d/
+    networks:
+      - app-network
+
+  #Postgres Service
+  db:
+    image: postgres
+    container_name: my-php-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - data-db:/var/lib/postgresql/data #Persistencia de datos.
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql #Creación de tablas
+    ports:
+      - "5432:5432"
+    networks:
+      - app-network
+
+volumes:
+  data-db:
+
+networks:
+  app-network:
+    driver: bridge
